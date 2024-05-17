@@ -3,6 +3,7 @@ import requests
 
 import config.api_urls
 import config.common
+import tools
 
 
 def get_mall_region_info(url, headers):
@@ -17,7 +18,7 @@ def get_mall_region_info(url, headers):
 
 
 def get_mall_info(cookie):
-    url = config.api_urls.MALL_INFO
+    url = 'https://e.waimai.meituan.com/api/v2/account/homePage'
     headers = {
         'Cookie': cookie,
         'User-Agent': config.common.USER_AGENT
@@ -33,7 +34,19 @@ def get_mall_info(cookie):
     return None
 
 
-def get_mall_hui_fu_lv(url, headers, data):
+def get_mall_hui_fu_lv(cookie):
+    cookie_dict = tools.cookies2dict(cookie)
+    mall_info = get_mall_info(cookie)
+    url = f'https://e.waimai.meituan.com/gw/api/im/rights/v2/top/tips?region_id={mall_info["regionId"]}'
+    headers = {
+        'Cookie': cookie,
+        'User-Agent': config.common.USER_AGENT
+    }
+
+    data = {
+        'wmPoiId': cookie_dict['wmPoiId']
+    }
+
     res = requests.post(url=url, headers=headers, data=data)
 
     if res.status_code == 200:
@@ -46,4 +59,4 @@ def get_mall_hui_fu_lv(url, headers, data):
 
 
 if __name__ == '__main__':
-    print(get_mall_info(config.common.TEST_COOKIE))
+    print(get_mall_hui_fu_lv(config.common.TEST_COOKIE))

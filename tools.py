@@ -19,3 +19,7 @@ def date2str(date: datetime.date):
 
 def str2date(date_str: str):
     return datetime.datetime.strptime(date_str, '%Y-%m-%d')
+
+
+if __name__ == '__main__':
+    print(str2date('2024-05-17'))

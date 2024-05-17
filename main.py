@@ -19,19 +19,49 @@ def insert_order_in_7(cookie):
         cursor = db.cursor()
 
         platform = 'MT'
-        order_seq = item['orderInfo']['dayseq']
-        order_no = item['orderInfo']['wmOrderViewId']
-        order_amount = item['chargeInfo']['fixedSettlementInfo']['foodAmount']
-        pay_amount = item['chargeInfo']['fixedSettlementInfo']['userPayTotalAmount']
-        income = item['chargeInfo']['fixedSettlementInfo']['settleAmount']
-        user_type = item['foodInfo']['userLabelVo']['contents'][0]['info']
-        user_info = json.dumps(item['userInfo']).replace('\\u', '\\\\u')
-        food_details = item['foodInfo']['cartDetailVos'][0]['details']
-        food_details = list(map(lambda item: {'foodName': item['foodName'], 'count': item['count']}, food_details))
-        food_details = json.dumps(food_details).replace('\\u', '\\\\u')
-        poi_id = item['orderInfo']['basicVo']['wmPoiId']
-        create_time = item['orderInfo']['basicVo']['orderTime']
-        create_time = datetime.datetime.fromtimestamp(create_time)
+        order_seq = None
+        order_no = None
+        order_amount = None
+        pay_amount = None
+        income = None
+        user_type = None
+        user_info = None
+        food_details = None
+        poi_id = None
+        create_time = None
+
+        if 'orderInfo' not in item:
+            order_seq = item['wm_poi_order_dayseq']
+            order_no = item['wm_order_id_view_str']
+            order_amount = item['cartDetailVos'][0]['cartAmount']
+            pay_amount = item['total_after']
+            income = item['total_after']
+            user_type = '未知'
+            user_info = json.dumps(
+                {'recipientName': item['recipient_name'],
+                 'recipientPhoneVo': {'appRecipientPhoneVo': {'recipientPhoneShow': item['recipient_phone']}}}).replace(
+                '\\u', '\\\\u')
+            food_details = item['cartDetailVos'][0]['details']
+            food_details = list(map(lambda x: {'foodName': x['food_name'], 'count': x['count'], 'foodId': x['wm_food_id']}, food_details))
+            food_details = json.dumps(food_details).replace('\\u', '\\\\u')
+            poi_id = item['wm_poi_id']
+            create_time = datetime.datetime.fromtimestamp(item['order_time'])
+        else:
+            order_seq = item['orderInfo']['dayseq']
+            order_no = item['orderInfo']['wmOrderViewId']
+            order_amount = item['chargeInfo']['fixedSettlementInfo']['foodAmount']
+            pay_amount = item['chargeInfo']['fixedSettlementInfo']['userPayTotalAmount']
+            income = item['chargeInfo']['fixedSettlementInfo']['settleAmount']
+            user_type = item['foodInfo']['userLabelVo']['contents'][0]['info']
+            user_info = json.dumps(item['userInfo']).replace('\\u', '\\\\u')
+            food_details = item['foodInfo']['cartDetailVos'][0]['details']
+            food_details = list(
+                map(lambda item: {'foodName': item['foodName'], 'count': item['count'], 'foodId': item['foodId']},
+                    food_details))
+            food_details = json.dumps(food_details).replace('\\u', '\\\\u')
+            poi_id = item['orderInfo']['basicVo']['wmPoiId']
+            create_time = item['orderInfo']['basicVo']['orderTime']
+            create_time = datetime.datetime.fromtimestamp(create_time)
 
         try:
             query_sql = f'select count(*) from mt_order where order_no={order_no}'
@@ -41,7 +71,7 @@ def insert_order_in_7(cookie):
                 update_sql = f"""update mt_order set food_details='{food_details}' where order_no={order_no}"""
                 cursor.execute(update_sql)
                 db.commit()
-                print(update_sql)
+                # print(update_sql)
                 continue
 
             insert_sql = f"""insert into mt_order(
@@ -71,7 +101,7 @@ def insert_order_in_7(cookie):
             """
             cursor.execute(insert_sql)
             db.commit()
-            print(f'成功插入订单{order_no}')
+            # print(f'成功插入订单{order_no}')
 
         except Exception as e:
             db.rollback()
@@ -102,7 +132,7 @@ def insert_comment_in_180(cookie, comment_type):
             count = cursor.fetchone()[0]
             if count > 0:
                 update_sql = f"update comment set order_details='{order_details}', score='{score}' where comment_id='{comment_id}'"
-                print(update_sql)
+                # print(update_sql)
                 cursor.execute(update_sql)
                 db.commit()
                 continue
@@ -128,7 +158,7 @@ def insert_comment_in_180(cookie, comment_type):
             """
             cursor.execute(insert_sql)
             db.commit()
-            print(f'成功插入评论: {comment_id}')
+            # print(f'成功插入评论: {comment_id}')
         except Exception as e:
             traceback.print_exc(e)
         finally:
